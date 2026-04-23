@@ -1,9 +1,35 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+// Mock Supabase before importing the store
+vi.mock("@/lib/supabase", () => ({
+  supabase: {
+    from: () => ({
+      upsert: () => ({ then: () => {} }),
+      delete: () => ({
+        eq: () => ({ eq: () => ({ then: () => {} }), then: () => {} }),
+        then: () => {},
+      }),
+      update: () => ({
+        eq: () => ({ eq: () => ({ then: () => {} }) }),
+      }),
+      select: () => ({
+        eq: () => ({ data: [], error: null }),
+      }),
+    }),
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null } }),
+      onAuthStateChange: () => ({
+        data: { subscription: { unsubscribe: () => {} } },
+      }),
+    },
+  },
+}));
+
 import { useCartStore } from "@/lib/store";
 
-// Reset store state between tests by replacing items directly.
+// Reset store state between tests
 function resetStore() {
-  useCartStore.setState({ items: [] });
+  useCartStore.setState({ items: [], userId: null, loading: false });
 }
 
 describe("useCartStore", () => {
@@ -58,5 +84,23 @@ describe("useCartStore", () => {
 
   it("total returns 0 for an empty cart", () => {
     expect(useCartStore.getState().total()).toBe(0);
+  });
+
+  it("clearCart empties all items", () => {
+    useCartStore.getState().addItem({ id: "1", name: "T-Shirt", price: 29.99, quantity: 1 });
+    useCartStore.getState().addItem({ id: "2", name: "Shoes", price: 119.99, quantity: 1 });
+    useCartStore.getState().clearCart();
+    expect(useCartStore.getState().items).toHaveLength(0);
+  });
+
+  it("setUserId updates the userId", () => {
+    useCartStore.getState().setUserId("user-123");
+    expect(useCartStore.getState().userId).toBe("user-123");
+  });
+
+  it("setUserId to null clears userId", () => {
+    useCartStore.getState().setUserId("user-123");
+    useCartStore.getState().setUserId(null);
+    expect(useCartStore.getState().userId).toBeNull();
   });
 });

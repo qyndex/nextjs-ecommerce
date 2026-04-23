@@ -22,8 +22,9 @@ const baseProduct = {
   id: "1",
   name: "Classic T-Shirt",
   price: 29.99,
-  image: "/images/tshirt.jpg",
-  category: "Apparel",
+  image_url: "/images/tshirt.jpg",
+  slug: "classic-tshirt",
+  categories: { name: "Apparel", slug: "apparel" },
 };
 
 describe("ProductCard", () => {
@@ -42,10 +43,10 @@ describe("ProductCard", () => {
     expect(screen.getByText("Apparel")).toBeInTheDocument();
   });
 
-  it("links to the product detail page", () => {
+  it("links to the product detail page using slug", () => {
     render(<ProductCard product={baseProduct} />);
     const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/products/1");
+    expect(link).toHaveAttribute("href", "/products/classic-tshirt");
   });
 
   it("renders the product image with correct alt text", () => {
@@ -61,5 +62,24 @@ describe("ProductCard", () => {
   it("displays whole-dollar prices correctly", () => {
     render(<ProductCard product={{ ...baseProduct, price: 50 }} />);
     expect(screen.getByText("$50.00")).toBeInTheDocument();
+  });
+
+  it("shows compare_at_price when higher than price", () => {
+    render(
+      <ProductCard
+        product={{ ...baseProduct, price: 29.99, compare_at_price: 39.99 }}
+      />
+    );
+    expect(screen.getByText("$39.99")).toBeInTheDocument();
+  });
+
+  it("falls back to id in link when slug is null", () => {
+    render(
+      <ProductCard
+        product={{ ...baseProduct, slug: null }}
+      />
+    );
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "/products/1");
   });
 });
